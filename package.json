@@ -1,0 +1,44 @@
+{
+  "name": "lazycad",
+  "version": "1.0.0",
+  "description": "LazyCAD \u2014 parametric, constraint-based 3D CAD in the browser that Claude can drive as a skill",
+  "author": "haroonalisa",
+  "homepage": "https://github.com/haroonalisa/lazyCAD#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haroonalisa/lazyCAD.git"
+  },
+  "bugs": {
+    "url": "https://github.com/haroonalisa/lazyCAD/issues"
+  },
+  "type": "module",
+  "bin": {
+    "lazycad": "cli/cad.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "cad": "node cli/cad.mjs",
+    "test": "node test/run.mjs"
+  },
+  "keywords": [
+    "cad",
+    "3d",
+    "parametric",
+    "constraint-solver",
+    "sketch",
+    "stl",
+    "3mf",
+    "manifold",
+    "three.js",
+    "claude",
+    "skill"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "manifold-3d": "^3.5.4",
+    "three": "^0.186.1"
+  }
+}

@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+
+# user workspace: the live document, its backups and personal model scripts stay local
+models/*
+!models/.gitkeep
+
+# build / export output
+*.stl
+*.3mf
+*.obj
+*.dxf
+preview.png
+*.tmp
+*.log
+
+# editors / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

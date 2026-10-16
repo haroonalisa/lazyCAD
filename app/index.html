@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LazyCAD</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "/node_modules/three/build/three.module.js",
+      "three/addons/": "/node_modules/three/examples/jsm/",
+      "manifold-3d": "/node_modules/manifold-3d/manifold.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand">LazyCAD</div>
+    <div class="group">
+      <button data-cmd="new" title="New document">New</button>
+      <button data-cmd="open" title="Open a .cad.json file">Open</button>
+      <button data-cmd="save" title="Download the document (.cad.json)">Save</button>
+      <div class="menu">
+        <button title="Export">Export ▾</button>
+        <div class="menu-items">
+          <button data-cmd="export-stl">STL (binary)</button>
+          <button data-cmd="export-stl-ascii">STL (ASCII)</button>
+          <button data-cmd="export-obj">OBJ</button>
+          <button data-cmd="export-3mf">3MF</button>
+          <hr>
+          <button data-cmd="export-sketch-dxf">Active sketch → DXF</button>
+          <button data-cmd="export-sketch-svg">Active sketch → SVG</button>
+        </div>
+      </div>
+    </div>
+    <div class="group">
+      <button data-cmd="undo" title="Undo (Ctrl+Z)">↶</button>
+      <button data-cmd="redo" title="Redo (Ctrl+Shift+Z)">↷</button>
+    </div>
+    <div class="group" id="feature-tools">
+      <button data-cmd="new-sketch" title="New sketch on a plane or face (S)">✎ Sketch</button>
+      <button data-cmd="new-extrude" title="Extrude a sketch profile (E)">Extrude</button>
+      <button data-cmd="new-revolve" title="Revolve a profile around an axis">Revolve</button>
+      <button data-cmd="new-sweep" title="Sweep a profile along a path or helix">Sweep</button>
+      <button data-cmd="new-loft" title="Loft between profiles">Loft</button>
+      <button data-cmd="new-fillet" title="Round edges of a body">Fillet</button>
+      <button data-cmd="new-chamfer" title="Bevel edges of a body">Chamfer</button>
+      <button data-cmd="new-shell" title="Hollow a body with a wall thickness">Shell</button>
+      <div class="menu">
+        <button>Solid ▾</button>
+        <div class="menu-items">
+          <button data-cmd="new-box">Box</button>
+          <button data-cmd="new-cylinder">Cylinder</button>
+          <button data-cmd="new-cone">Cone</button>
+          <button data-cmd="new-sphere">Sphere</button>
+          <button data-cmd="new-torus">Torus</button>
+        </div>
+      </div>
+      <div class="menu">
+        <button>Modify ▾</button>
+        <div class="menu-items">
+          <button data-cmd="new-pattern">Pattern</button>
+          <button data-cmd="new-mirror">Mirror</button>
+          <button data-cmd="new-transform">Move / Rotate</button>
+          <button data-cmd="new-boolean">Boolean</button>
+          <button data-cmd="new-split">Split by plane</button>
+        </div>
+      </div>
+      <button data-cmd="new-plane" title="Datum plane (offset / angled / from face)">Plane</button>
+      <button data-cmd="measure" title="Measure distances (M)">Measure</button>
+    </div>
+    <div class="spacer"></div>
+    <div id="live-status" title="Sync with models/current.cad.json">○ offline</div>
+  </header>
+
+  <div id="main">
+    <aside id="left">
+      <section>
+        <h3>Parameters <button class="mini" data-cmd="add-param" title="Add parameter">+</button></h3>
+        <div id="params"></div>
+      </section>
+      <section class="grow">
+        <h3>Timeline</h3>
+        <div id="timeline"></div>
+      </section>
+      <section>
+        <h3>Bodies</h3>
+        <div id="bodies"></div>
+      </section>
+    </aside>
+
+    <div id="viewport">
+      <div id="sketch-toolbar" hidden>
+        <div class="tb-group">
+          <button data-tool="select" title="Select / drag (Esc)">Select</button>
+          <button data-tool="line" title="Line / polyline (L)">Line</button>
+          <button data-tool="rect" title="Rectangle (R)">Rect</button>
+          <button data-tool="centerRect" title="Center rectangle">C-Rect</button>
+          <button data-tool="circle" title="Circle (C)">Circle</button>
+          <button data-tool="arc" title="Arc: center, start, end (A)">Arc</button>
+          <button data-tool="polygon" title="Regular polygon">Polygon</button>
+          <button data-tool="slot" title="Slot">Slot</button>
+          <button data-tool="bezier" title="Bezier spline">Spline</button>
+          <button data-tool="point" title="Point (P)">Point</button>
+          <button data-tool="trim" title="Trim: click the part of a curve to remove (T)">✂ Trim</button>
+          <button data-tool="fillet2d" title="Round a corner: click the corner point of two lines">⌒ Fillet</button>
+          <button data-tool="chamfer2d" title="Bevel a corner: click the corner point of two lines">◺ Chamfer</button>
+          <input id="corner-size" type="text" value="2" title="Fillet radius / chamfer distance (number or expression)">
+        </div>
+        <div class="tb-group" id="constraint-buttons">
+          <button data-con="dimension" title="Dimension the selection (D)">⟷ Dim</button>
+          <button data-con="coincident" title="Coincident (2 points)">●</button>
+          <button data-con="horizontal" title="Horizontal (line or 2 points) (H)">H</button>
+          <button data-con="vertical" title="Vertical (line or 2 points) (V)">V</button>
+          <button data-con="parallel" title="Parallel (2 lines)">∥</button>
+          <button data-con="perpendicular" title="Perpendicular (2 lines)">⊥</button>
+          <button data-con="equal" title="Equal length / radius">=</button>
+          <button data-con="tangent" title="Tangent">T</button>
+          <button data-con="concentric" title="Concentric">◎</button>
+          <button data-con="midpoint" title="Midpoint (point + line)">M</button>
+          <button data-con="pointOn" title="Point on line / circle">⊷</button>
+          <button data-con="collinear" title="Collinear (2 lines)">⋯</button>
+          <button data-con="symmetric" title="Symmetric (2 points + line)">⇋</button>
+          <button data-con="fix" title="Fix points in place">⚓</button>
+          <button data-con="equation" title="Add an equation constraint">ƒ=</button>
+          <button data-con="construction" title="Toggle construction (X)">┄</button>
+          <button data-con="delete" title="Delete selection (Del)">🗑</button>
+        </div>
+        <div class="tb-group">
+          <label title="Snap to grid"><input type="checkbox" id="grid-snap" checked> grid</label>
+          <input id="grid-step" type="number" value="1" step="any" min="0" title="Grid step (mm)">
+          <button id="finish-sketch" class="primary" title="Finish sketch (Enter)">✓ Finish</button>
+        </div>
+      </div>
+      <div id="overlay"></div>
+      <div id="view-buttons">
+        <button data-view="iso" title="Isometric">Iso</button>
+        <button data-view="front" title="Front (-Y)">Front</button>
+        <button data-view="top" title="Top (+Z)">Top</button>
+        <button data-view="right" title="Right (+X)">Right</button>
+        <button data-view="normal" title="Look at sketch plane">⊥ Plane</button>
+        <button data-view="fit" title="Zoom to fit (F)">Fit</button>
+        <button data-view="ortho" title="Toggle orthographic / perspective">Ortho</button>
+      </div>
+      <div id="hint"></div>
+      <div id="statusbar"><span id="status-left"></span><span id="status-right"></span></div>
+    </div>
+
+    <aside id="right">
+      <div id="inspector"></div>
+    </aside>
+  </div>
+
+  <div id="modal" hidden></div>
+  <input type="file" id="file-input" accept=".json,.cad.json" hidden>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
